@@ -1222,7 +1222,7 @@ bool Position::has_game_cycle(int ply) const {
           Square s1 = from_sq(move);
           Square s2 = to_sq(move);
 
-          if (!((between_bb(s1, s2) ^ s2) & pieces()))
+          if (!(between_bb(s1, s2) & pieces()))
           {
               if (ply > i)
                   return true;
