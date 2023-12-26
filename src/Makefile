@@ -22,11 +22,11 @@
 ### ==========================================================================
 
 ### Executable name
-ifeq ($(COMP),mingw)
-EXE = stockfish.exe
-else
-EXE = stockfish
-endif
+#ifeq ($(COMP),mingw)
+#EXE = stockfish.exe
+#else
+#EXE = stockfish
+#endif
 
 ### Installation dir definitions
 PREFIX = /usr/local
@@ -84,6 +84,10 @@ sse = no
 pext = no
 
 ### 2.2 Architecture specific
+ifeq ($(ARCH),)
+   ARCH = x86-64-modern
+endif
+
 ifeq ($(ARCH),general-32)
 	arch = any
 	bits = 32
@@ -372,6 +376,9 @@ endif
 ### Section 4. Public Targets
 ### ==========================================================================
 
+build: config-sanity
+	$(MAKE) ARCH=$(ARCH) COMP=$(COMP) all
+
 help:
 	@echo ""
 	@echo "To compile stockfish, type: "
@@ -422,9 +429,6 @@ help:
 .PHONY: help build profile-build strip install clean objclean profileclean \
         config-sanity icc-profile-use icc-profile-make gcc-profile-use gcc-profile-make \
         clang-profile-use clang-profile-make
-
-build: config-sanity
-	$(MAKE) ARCH=$(ARCH) COMP=$(COMP) all
 
 profile-build: config-sanity objclean profileclean
 	@echo ""
