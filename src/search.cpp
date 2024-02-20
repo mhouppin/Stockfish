@@ -549,7 +549,7 @@ Value Search::Worker::search(
 
     // Check for the available remaining time
     if (is_mainthread())
-        main_manager()->check_time(*thisThread);
+        main_manager()->check_time(*thisThread, false);
 
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
     if (PvNode && thisThread->selDepth < ss->ply + 1)
@@ -1402,6 +1402,10 @@ Value Search::Worker::qsearch(Position& pos, Stack* ss, Value alpha, Value beta,
     ss->inCheck        = pos.checkers();
     moveCount          = 0;
 
+    // Check for the available remaining time
+    if (is_mainthread())
+        main_manager()->check_time(*thisThread, true);
+
     // Used to send selDepth info to GUI (selDepth counts from 1, ply from 0)
     if (PvNode && thisThread->selDepth < ss->ply + 1)
         thisThread->selDepth = ss->ply + 1;
@@ -1828,12 +1832,20 @@ Move Skill::pick_best(const RootMoves& rootMoves, size_t multiPV) {
 
 // Used to print debug info and, more importantly,
 // to detect when we are out of available time and thus stop the search.
-void SearchManager::check_time(Search::Worker& worker) {
+void SearchManager::check_time(Search::Worker& worker, bool inQsearch) {
     if (--callsCnt > 0)
         return;
 
+    // Don't do the expensive verifications in qsearch, but keep the counter at zero
+    // so that the next search node will do the check_time() itself.
+    if (inQsearch)
+    {
+        callsCnt = 0;
+        return;
+    }
+
     // When using nodes, ensure checking rate is not lower than 0.1% of nodes
-    callsCnt = worker.limits.nodes ? std::min(512, int(worker.limits.nodes / 1024)) : 512;
+    callsCnt = worker.limits.nodes ? int(std::min<uint64_t>(512, worker.limits.nodes / 1024)) : 512;
 
     static TimePoint lastInfoTime = now();
 
